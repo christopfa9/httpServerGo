@@ -1,3 +1,5 @@
+package commands
+
 // TODO: Implement createfile.go (Handles /createfile?name=&content=&repeat=)
 //
 // [ ] Import necessary packages:

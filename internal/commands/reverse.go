@@ -1,3 +1,5 @@
+package commands
+
 // TODO: Implement reverse.go (Handles /reverse?text=)
 //
 // [ ] Import necessary packages:

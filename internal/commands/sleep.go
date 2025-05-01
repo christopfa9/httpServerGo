@@ -1,3 +1,5 @@
+package commands
+
 // TODO: Implement sleep.go (Handles /sleep?seconds=)
 //
 // [ ] Import necessary packages:

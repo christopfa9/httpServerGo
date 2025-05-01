@@ -1,3 +1,5 @@
+package commands
+
 // TODO: Implement random.go (Handles /random?count=&min=&max=)
 //
 // [ ] Import necessary packages:

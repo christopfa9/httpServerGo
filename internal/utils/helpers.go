@@ -1,3 +1,5 @@
+package utils
+
 // TODO: Implement helpers.go (Shared utility functions)
 //
 // [ ] Import necessary packages:

@@ -1,3 +1,5 @@
+package test
+
 // TODO: Implement server_test.go (Tests for listener and handler logic)
 //
 // [ ] Import necessary packages:

@@ -1,3 +1,5 @@
+package commands
+
 // TODO: Implement help.go (Handles /help)
 //
 // [ ] Import necessary packages:

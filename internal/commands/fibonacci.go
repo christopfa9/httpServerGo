@@ -1,3 +1,5 @@
+package commands
+
 // TODO: Implement fibonacci.go (Handles /fibonacci?num=N)
 //
 // [ ] Import necessary packages:

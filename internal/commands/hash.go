@@ -1,3 +1,5 @@
+package commands
+
 // TODO: Implement hash.go (Handles /hash?text=)
 //
 // [ ] Import necessary packages:

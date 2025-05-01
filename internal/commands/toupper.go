@@ -1,3 +1,5 @@
+package commands
+
 // TODO: Implement toupper.go (Handles /toupper?text=)
 //
 // [ ] Import necessary packages:

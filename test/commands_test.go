@@ -1,3 +1,5 @@
+package test
+
 // TODO: Implement commands_test.go (Unit tests for each command handler)
 //
 // [ ] Import necessary packages:

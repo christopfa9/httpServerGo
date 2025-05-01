@@ -1,3 +1,5 @@
+package commands
+
 // TODO: Implement simulate.go (Handles /simulate?seconds=&task=)
 //
 // [ ] Import necessary packages:

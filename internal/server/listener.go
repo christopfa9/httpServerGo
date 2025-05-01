@@ -1,3 +1,5 @@
+package server
+
 // TODO: Implement listener.go (Handles TCP listening and connection acceptance)
 //
 // [ ] Import necessary packages:

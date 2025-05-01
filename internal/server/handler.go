@@ -1,3 +1,5 @@
+package server
+
 // TODO: Implement handler.go (Handles and routes HTTP requests)
 //
 // [ ] Import necessary packages:

@@ -1,3 +1,5 @@
+package status
+
 // TODO: Implement metrics.go (Tracks server status and runtime metrics)
 //
 // [ ] Import necessary packages:

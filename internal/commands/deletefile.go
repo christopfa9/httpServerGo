@@ -1,3 +1,5 @@
+package commands
+
 // TODO: Implement deletefile.go (Handles /deletefile?name=)
 //
 // [ ] Import necessary packages:

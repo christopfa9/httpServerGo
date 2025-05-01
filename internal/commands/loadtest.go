@@ -1,3 +1,5 @@
+package commands
+
 // TODO: Implement loadtest.go (Handles /loadtest?tasks=&sleep=)
 //
 // [ ] Import necessary packages:

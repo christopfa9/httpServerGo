@@ -1,3 +1,5 @@
+package commands
+
 // TODO: Implement timestamp.go (Handles /timestamp)
 //
 // [ ] Import necessary packages:
