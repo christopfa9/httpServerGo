@@ -1,3 +1,3 @@
-module github.com/christopfa9/http-server-go
+module httpServerGo
 
 go 1.24.2

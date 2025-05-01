@@ -1,3 +1,5 @@
+package main
+
 // TODO: Implement main.go (HTTP Server Entry Point)
 //
 // [ ] Import necessary packages:
@@ -23,3 +25,12 @@
 // [ ] Handle and log critical errors (e.g., port unavailable, panic recovery)
 //
 // [ ] Print instructions or banner on startup (optional)
+
+import (
+	"fmt"
+)
+
+func main() {
+
+	fmt.Printf("Hola, mundo!\n")
+}
