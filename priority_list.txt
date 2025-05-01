@@ -1,0 +1,25 @@
+Priority List for Go HTTP Server Project Implementation
+============================================================
+
+1. cmd/main.go                          # Entry point of the server
+2. internal/server/listener.go         # Handles socket listening and client acceptance
+3. internal/server/handler.go          # Dispatches incoming HTTP requests to the correct handler
+4. internal/status/metrics.go          # Tracks uptime, PID, active connections, child processes
+5. internal/commands/fibonacci.go      # Implements /fibonacci?num=N
+6. internal/commands/createfile.go     # Implements /createfile?name=&content=&repeat=
+7. internal/commands/deletefile.go     # Implements /deletefile?name=
+8. internal/commands/reverse.go        # Implements /reverse?text=
+9. internal/commands/toupper.go        # Implements /toupper?text=
+10. internal/commands/random.go         # Implements /random?count=&min=&max=
+11. internal/commands/timestamp.go      # Implements /timestamp
+12. internal/commands/hash.go           # Implements /hash?text=
+13. internal/commands/simulate.go       # Implements /simulate?seconds=&task=
+14. internal/commands/sleep.go          # Implements /sleep?seconds=
+15. internal/commands/loadtest.go       # Implements /loadtest?tasks=&sleep=
+16. internal/commands/help.go           # Lists all available endpoints and parameters
+17. internal/utils/helpers.go           # Utility functions (logging, hashing, etc.)
+18. test/server_test.go                 # Tests for server listener and handler
+19. test/commands_test.go               # Tests for command routes and functions
+20. docs/README.md                      # Instructions for build, run, architecture
+21. docs/manual.md              # User manual
+22. reports/report.pdf        # Scientific report (external to code, late stage)

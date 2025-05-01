@@ -1,0 +1,43 @@
+<!--
+TODO: Implement report.pdf (Scientific Report - IEEE/ACM Format)
+
+[ ] Resumen (Abstract)
+    - Breve descripción del problema, solución implementada y resultados clave
+
+[ ] Introducción
+    - Contextualización del proyecto
+    - Justificación técnica y educativa
+    - Objetivos del sistema
+
+[ ] Marco Teórico
+    - Servidores HTTP/1.0
+    - Manejo de sockets en Go
+    - Concurrencia con goroutines y sincronización
+
+[ ] Diseño e Implementación
+    - Arquitectura modular del sistema
+    - Descripción de carpetas y archivos
+    - Ejemplo del flujo de manejo de una solicitud
+
+[ ] Estrategia de Pruebas
+    - Pruebas unitarias y de integración
+    - Cobertura alcanzada (>90%)
+    - Herramientas utilizadas (go test, cobertura)
+
+[ ] Resultados Experimentales
+    - Tiempos de respuesta
+    - Escenarios de carga (/loadtest)
+    - Manejo de múltiples clientes
+
+[ ] Discusión
+    - Análisis crítico
+    - Fortalezas del diseño
+    - Limitaciones encontradas y posibles mejoras
+
+[ ] Conclusiones
+    - Reflexiones finales
+    - Relevancia del proyecto en el estudio de sistemas operativos
+
+[ ] Referencias
+    - Bibliografía utilizada (RFCs, libros, documentación Go, etc.)
+-->
