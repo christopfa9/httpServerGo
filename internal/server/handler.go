@@ -30,3 +30,151 @@ package server
 // [ ] Close connection after responding
 //
 // [ ] Update metrics (total connections, active handlers, etc.)
+
+import (
+	"bufio"
+	"net"
+	"strconv"
+	"strings"
+	"time"
+
+	"httpServerGo/internal/commands"
+	"httpServerGo/internal/status"
+	"httpServerGo/internal/utils"
+)
+
+// HandleConnection procesa una petición HTTP/1.0 simple, enruta a internal/commands
+// y responde usando los utilitarios de utils. Solo soporta GET.
+func HandleConnection(conn net.Conn) {
+	// Actualizamos métricas
+	status.IncTotalConnections()
+	status.IncActiveHandlers()
+	defer status.DecActiveHandlers()
+
+	// Timeout para no bloquearse indefinidamente
+	conn.SetDeadline(time.Now().Add(5 * time.Second))
+	reader := bufio.NewReader(conn)
+
+	// 1) Leer línea de petición: e.g. "GET /fibonacci?num=5 HTTP/1.0"
+	line, err := reader.ReadString('\n')
+	if err != nil {
+		utils.WriteHTTPResponse(conn, 400, "text/plain", "400 Bad Request\n")
+		return
+	}
+	line = strings.TrimSpace(line)
+	parts := strings.Split(line, " ")
+	if len(parts) < 3 {
+		utils.WriteHTTPResponse(conn, 400, "text/plain", "400 Bad Request\n")
+		return
+	}
+	method, rawURI := parts[0], parts[1]
+	if method != "GET" {
+		utils.WriteHTTPResponse(conn, 405, "text/plain", "405 Method Not Allowed\n")
+		return
+	}
+
+	// 2) Extraer ruta y parámetros
+	path, query := rawURI, ""
+	if idx := strings.Index(rawURI, "?"); idx != -1 {
+		path = rawURI[:idx]
+		query = rawURI[idx+1:]
+	}
+	params := utils.ParseQueryParams(query)
+
+	// 3) Enrutar al comando adecuado
+	var payload interface{}
+	var cmdErr error
+
+	switch path {
+	case "/fibonacci":
+		n, err := strconv.Atoi(params["num"])
+		if err != nil {
+			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid 'num' parameter\n")
+			return
+		}
+		payload, cmdErr = commands.Fibonacci(n)
+
+	case "/createfile":
+		name, content := params["name"], params["content"]
+		repeat, _ := strconv.Atoi(params["repeat"])
+		payload, cmdErr = commands.CreateFile(name, content, repeat)
+
+	case "/deletefile":
+		payload, cmdErr = commands.DeleteFile(params["name"])
+
+	case "/reverse":
+		payload, cmdErr = commands.Reverse(params["text"])
+
+	case "/toupper":
+		payload, cmdErr = commands.ToUpper(params["text"])
+
+	case "/random":
+		cnt, e1 := strconv.Atoi(params["count"])
+		mn, e2 := strconv.Atoi(params["min"])
+		mx, e3 := strconv.Atoi(params["max"])
+		if e1 != nil || e2 != nil || e3 != nil {
+			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid count/min/max parameters\n")
+			return
+		}
+		payload, cmdErr = commands.Random(cnt, mn, mx)
+
+	case "/timestamp":
+		payload, cmdErr = commands.Timestamp()
+
+	case "/hash":
+		payload, cmdErr = commands.Hash(params["text"])
+
+	case "/simulate":
+		secs, e := strconv.Atoi(params["seconds"])
+		if e != nil {
+			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid 'seconds' parameter\n")
+			return
+		}
+		payload, cmdErr = commands.Simulate(secs, params["task"])
+
+	case "/sleep":
+		secs, e := strconv.Atoi(params["seconds"])
+		if e != nil {
+			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid 'seconds' parameter\n")
+			return
+		}
+		payload, cmdErr = commands.Sleep(secs)
+
+	case "/loadtest":
+		tasks, e1 := strconv.Atoi(params["tasks"])
+		sleepSec, e2 := strconv.Atoi(params["sleep"])
+		if e1 != nil || e2 != nil {
+			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid tasks/sleep parameters\n")
+			return
+		}
+		payload, cmdErr = commands.LoadTest(tasks, sleepSec)
+
+	case "/status":
+		payload, cmdErr = status.Marshal()
+
+	case "/help":
+		payload, cmdErr = commands.Help()
+
+	default:
+		utils.WriteHTTPResponse(conn, 404, "text/plain", "404 Not Found\n")
+		return
+	}
+
+	// 4) Si el comando devolvió error, respondemos 500
+	if cmdErr != nil {
+		utils.WriteHTTPResponse(conn, 500, "text/plain", "500 Internal Server Error\n")
+		return
+	}
+
+	// 5) Serializar y enviar la respuesta
+	var bodyStr string
+	contentType := "text/plain"
+	if s, ok := payload.(string); ok {
+		bodyStr = s
+	} else {
+		contentType = "application/json"
+		bodyStr, _ = utils.JSONResponse(payload)
+	}
+
+	utils.WriteHTTPResponse(conn, 200, contentType, bodyStr)
+}
