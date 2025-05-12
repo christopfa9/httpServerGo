@@ -38,7 +38,6 @@ import (
 	"strings"
 	"time"
 
-	"httpServerGo/internal/commands"
 	"httpServerGo/internal/status"
 	"httpServerGo/internal/utils"
 )
@@ -92,21 +91,40 @@ func HandleConnection(conn net.Conn) {
 			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid 'num' parameter\n")
 			return
 		}
-		payload, cmdErr = commands.Fibonacci(n)
+		respCh := make(chan fibResult)
+		fibJobs <- fibJob{n: n, resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
 
 	case "/createfile":
-		name, content := params["name"], params["content"]
+		name := params["name"]
+		content := params["content"]
 		repeat, _ := strconv.Atoi(params["repeat"])
-		payload, cmdErr = commands.CreateFile(name, content, repeat)
+		respCh := make(chan createFileResult)
+		createFileJobs <- createFileJob{name: name, content: content, repeat: repeat, resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
 
 	case "/deletefile":
-		payload, cmdErr = commands.DeleteFile(params["name"])
+		name := params["name"]
+		respCh := make(chan deleteFileResult)
+		deleteFileJobs <- deleteFileJob{name: name, resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
 
 	case "/reverse":
-		payload, cmdErr = commands.Reverse(params["text"])
+		text := params["text"]
+		respCh := make(chan reverseResult)
+		reverseJobs <- reverseJob{text: text, resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
 
 	case "/toupper":
-		payload, cmdErr = commands.ToUpper(params["text"])
+		text := params["text"]
+		respCh := make(chan toUpperResult)
+		toUpperJobs <- toUpperJob{text: text, resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
 
 	case "/random":
 		cnt, e1 := strconv.Atoi(params["count"])
@@ -116,13 +134,23 @@ func HandleConnection(conn net.Conn) {
 			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid count/min/max parameters\n")
 			return
 		}
-		payload, cmdErr = commands.Random(cnt, mn, mx)
+		respCh := make(chan randomResult)
+		randomJobs <- randomJob{count: cnt, min: mn, max: mx, resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
 
 	case "/timestamp":
-		payload, cmdErr = commands.Timestamp()
+		respCh := make(chan timestampResult)
+		timestampJobs <- timestampJob{resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
 
 	case "/hash":
-		payload, cmdErr = commands.Hash(params["text"])
+		text := params["text"]
+		respCh := make(chan hashResult)
+		hashJobs <- hashJob{text: text, resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
 
 	case "/simulate":
 		secs, e := strconv.Atoi(params["seconds"])
@@ -130,7 +158,11 @@ func HandleConnection(conn net.Conn) {
 			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid 'seconds' parameter\n")
 			return
 		}
-		payload, cmdErr = commands.Simulate(secs, params["task"])
+		task := params["task"]
+		respCh := make(chan simulateResult)
+		simulateJobs <- simulateJob{seconds: secs, task: task, resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
 
 	case "/sleep":
 		secs, e := strconv.Atoi(params["seconds"])
@@ -138,7 +170,10 @@ func HandleConnection(conn net.Conn) {
 			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid 'seconds' parameter\n")
 			return
 		}
-		payload, cmdErr = commands.Sleep(secs)
+		respCh := make(chan sleepResult)
+		sleepJobs <- sleepJob{seconds: secs, resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
 
 	case "/loadtest":
 		tasks, e1 := strconv.Atoi(params["tasks"])
@@ -147,13 +182,19 @@ func HandleConnection(conn net.Conn) {
 			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid tasks/sleep parameters\n")
 			return
 		}
-		payload, cmdErr = commands.LoadTest(tasks, sleepSec)
+		respCh := make(chan loadTestResult)
+		loadTestJobs <- loadTestJob{tasks: tasks, sleepSec: sleepSec, resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
 
 	case "/status":
 		payload, cmdErr = status.Marshal()
 
 	case "/help":
-		payload, cmdErr = commands.Help()
+		respCh := make(chan helpResult)
+		helpJobs <- helpJob{resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
 
 	default:
 		utils.WriteHTTPResponse(conn, 404, "text/plain", "404 Not Found\n")

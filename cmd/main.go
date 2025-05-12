@@ -37,6 +37,10 @@ import (
 )
 
 func main() {
+
+	// 0) Arrancamos los pools de workers
+	server.InitWorkerPools()
+
 	// 1) Leemos puerto de la variable de entorno o usamos 8080 por defecto
 	port := "8080"
 	if p := os.Getenv("PORT"); p != "" {
