@@ -1,5 +1,3 @@
-// internal/server/workerPools.go
-
 package server
 
 import (
