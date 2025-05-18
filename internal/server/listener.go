@@ -4,34 +4,69 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
+)
+
+var (
+	listener    net.Listener
+	connections sync.Map
+	shutdown    chan struct{}
 )
 
 // StartListener abre un socket TCP en el puerto indicado y acepta conexiones entrantes.
-// Por cada conexión, lanza una goroutine que delega el trabajo en HandleConnection.
 func StartListener(port string) error {
-	// 1. Abrir el listener
 	addr := fmt.Sprintf(":%s", port)
-	listener, err := net.Listen("tcp", addr)
+	var err error
+	listener, err = net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("no se pudo iniciar el listener en %s: %w", addr, err)
 	}
 	defer listener.Close()
 	log.Printf("✔ Servidor escuchando en %s", addr)
 
-	// 2. Bucle de aceptación de conexiones
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			// 3. Registrar errores no críticos y continuar
-			log.Printf("⚠ error al aceptar conexión: %v", err)
-			continue
-		}
-		log.Printf("→ Nueva conexión desde %s", conn.RemoteAddr())
+	shutdown = make(chan struct{})
 
-		// 4. Despachar a la función de manejo en paralelo
-		go func(c net.Conn) {
-			defer c.Close()
-			HandleConnection(c)
-		}(conn)
+	for {
+		select {
+		case <-shutdown:
+			log.Println("🔌 Cerrando listener...")
+			return nil
+		default:
+			conn, err := listener.Accept()
+			if err != nil {
+				// Ignorar error si el listener ya se cerró
+				if opErr, ok := err.(*net.OpError); ok && opErr.Err.Error() == "use of closed network connection" {
+					return nil
+				}
+				log.Printf("⚠ error al aceptar conexión: %v", err)
+				continue
+			}
+			log.Printf("→ Nueva conexión desde %s", conn.RemoteAddr())
+
+			// Manejar la conexión en paralelo
+			go func(c net.Conn) {
+				defer func() {
+					c.Close()
+					connections.Delete(c.RemoteAddr())
+					log.Printf("🛑 Conexión cerrada: %s", c.RemoteAddr())
+				}()
+				HandleConnection(c)
+			}(conn)
+		}
 	}
+}
+
+// Shutdown detiene el listener y cierra todas las conexiones activas.
+func Shutdown() {
+	if listener != nil {
+		close(shutdown)
+		listener.Close()
+	}
+
+	connections.Range(func(key, value interface{}) bool {
+		if conn, ok := value.(net.Conn); ok {
+			conn.Close()
+		}
+		return true
+	})
 }
