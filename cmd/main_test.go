@@ -37,9 +37,9 @@ func startTestServer(t *testing.T) (string, func()) {
 	time.Sleep(500 * time.Millisecond) // wait for server startup
 
 	stop := func() {
-		// This relies on main listening for OS signals; for tests you might need to improve shutdown.
-		// For now just wait a bit and rely on test exit.
-		time.Sleep(500 * time.Millisecond)
+		// Send SIGINT to main
+		p, _ := os.FindProcess(os.Getpid())
+		_ = p.Signal(os.Interrupt)
 		wg.Wait()
 	}
 
@@ -102,4 +102,25 @@ func TestIntegration_AllEndpoints(t *testing.T) {
 			}
 		})
 	}
+
+	// Load Testing
+	t.Run("Load Test - High Concurrency", func(t *testing.T) {
+		wg := sync.WaitGroup{}
+		concurrentClients := 100
+		for i := 0; i < concurrentClients; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				sendRequest(t, port, "GET /status HTTP/1.0\r\n\r\n")
+			}()
+		}
+		wg.Wait()
+	})
+
+	// Stress Testing
+	t.Run("Stress Test - Max Connections", func(t *testing.T) {
+		for i := 0; i < 1000; i++ {
+			sendRequest(t, port, "GET /status HTTP/1.0\r\n\r\n")
+		}
+	})
 }
