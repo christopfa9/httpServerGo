@@ -25,10 +25,7 @@ func doRequest(t *testing.T, rawRequest string) string {
 
 	// Ejecutar el handler en goroutine para no bloquear
 	go func() {
-		err := server.HandleConnection(serverConn)
-		if err != nil {
-			t.Logf("HandleConnection error: %v", err)
-		}
+		server.HandleConnection(serverConn) // No retorna valor, por eso no se asigna
 	}()
 
 	// Escribir TODO el request (bloqueante)
