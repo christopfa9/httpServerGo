@@ -1,0 +1,35 @@
+# 1 Navegar a la carpeta raíz del proyecto (donde está docker-compose.yml)
+cd /ruta/a/tu/proyecto
+
+# 2 Levantar los 3 Workers y el Dispatcher
+docker-compose up --build -d
+
+# 3 Verificar que los contenedores estén arriba
+docker ps
+
+# ) Probar endpoints básicos
+curl http://localhost:9090/ping
+curl http://localhost:9090/help
+
+# 5 Probar endpoints originales
+curl "http://localhost:9090/fibonacci?num=10"
+curl "http://localhost:9090/createfile?name=test.txt&content=HolaMundo&repeat=3"
+curl "http://localhost:9090/deletefile?name=test.txt"
+curl "http://localhost:9090/reverse?text=HolaMundo"
+curl "http://localhost:9090/toupper?text=hola-mundo"
+curl "http://localhost:9090/random?count=5&min=1&max=100"
+curl "http://localhost:9090/timestamp"
+curl "http://localhost:9090/hash?text=datossecretos"
+curl "http://localhost:9090/simulate?seconds=4&task=demoTask"
+curl "http://localhost:9090/sleep?seconds=2"
+curl "http://localhost:9090/loadtest?tasks=10&sleep=1"
+curl "http://localhost:9090/status"
+
+# 6) Probar endpoints nuevos
+curl "http://localhost:9090/computepi?iters=100000"
+curl "http://localhost:9090/computepi?iters=10000"
+curl "http://localhost:9090/pow?prefix=00&maxTrials=100000"
+curl "http://localhost:9090/pow?prefix=abcdef&maxTrials=10"
+
+# 7) Detener  contenedores cuando terminen las pruebas
+(CTRL + C)

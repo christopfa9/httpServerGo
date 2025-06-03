@@ -7,14 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"httpServerGo/internal/status"
-	"httpServerGo/internal/utils"
+	"worker/internal/status"
+	"worker/internal/utils"
 )
 
-// HandleConnection procesa una petición HTTP/1.0 simple, enruta a internal/commands
-// y responde usando los utilitarios de utils. Solo soporta GET.
+// HandleConnection procesa una petición HTTP/1.0 simple, delega la ejecución
+// de cada comando a su pool de workers y responde usando los utilitarios de utils.
 func HandleConnection(conn net.Conn) {
-	// Actualizamos métricas
 	status.IncTotalConnections()
 	status.IncActiveHandlers()
 	defer status.DecActiveHandlers()
@@ -23,25 +22,24 @@ func HandleConnection(conn net.Conn) {
 	conn.SetDeadline(time.Now().Add(5 * time.Second))
 	reader := bufio.NewReader(conn)
 
-	// 1) Leer línea de petición: e.g. "GET /fibonacci?num=5 HTTP/1.0"
+	// 1) Leer y validar línea de petición
 	line, err := reader.ReadString('\n')
 	if err != nil {
 		utils.WriteHTTPResponse(conn, 400, "text/plain", "400 Bad Request\n")
 		return
 	}
-	line = strings.TrimSpace(line)
-	parts := strings.Split(line, " ")
+	parts := strings.Split(strings.TrimSpace(line), " ")
 	if len(parts) < 3 {
 		utils.WriteHTTPResponse(conn, 400, "text/plain", "400 Bad Request\n")
 		return
 	}
-	method, rawURI := parts[0], parts[1]
-	if method != "GET" {
+	if parts[0] != "GET" {
 		utils.WriteHTTPResponse(conn, 405, "text/plain", "405 Method Not Allowed\n")
 		return
 	}
 
 	// 2) Extraer ruta y parámetros
+	rawURI := parts[1]
 	path, query := rawURI, ""
 	if idx := strings.Index(rawURI, "?"); idx != -1 {
 		path = rawURI[:idx]
@@ -49,11 +47,18 @@ func HandleConnection(conn net.Conn) {
 	}
 	params := utils.ParseQueryParams(query)
 
-	// 3) Enrutar al comando adecuado
-	var payload interface{}
-	var cmdErr error
+	// 3) Dispatch según ruta, encolando en pools cuando corresponda
+	var (
+		payload interface{}
+		cmdErr  error
+	)
 
 	switch path {
+	case "/ping":
+		// Healthcheck: responder inmediatamente
+		utils.WriteHTTPResponse(conn, 200, "text/plain", "pong\n")
+		return
+
 	case "/fibonacci":
 		n, err := strconv.Atoi(params["num"])
 		if err != nil {
@@ -156,6 +161,29 @@ func HandleConnection(conn net.Conn) {
 		res := <-respCh
 		payload, cmdErr = res.value, res.err
 
+	case "/computepi":
+		iters, err := strconv.Atoi(params["iters"])
+		if err != nil {
+			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid 'iters' parameter\n")
+			return
+		}
+		respCh := make(chan computePiResult)
+		computePiJobs <- computePiJob{iters: iters, resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
+
+	case "/pow":
+		prefix := params["prefix"]
+		maxTrials, err := strconv.Atoi(params["maxTrials"])
+		if err != nil {
+			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid 'maxTrials' parameter\n")
+			return
+		}
+		respCh := make(chan powResult)
+		powJobs <- powJob{prefix: prefix, maxTrials: maxTrials, resp: respCh}
+		res := <-respCh
+		payload, cmdErr = res.value, res.err
+
 	case "/status":
 		payload, cmdErr = status.Marshal()
 
@@ -170,15 +198,15 @@ func HandleConnection(conn net.Conn) {
 		return
 	}
 
-	// 4) Si el comando devolvió error, respondemos 500
+	// 4) Manejar errores de comando
 	if cmdErr != nil {
 		utils.WriteHTTPResponse(conn, 500, "text/plain", "500 Internal Server Error\n")
 		return
 	}
 
-	// 5) Serializar y enviar la respuesta
-	var bodyStr string
+	// 5) Serializar payload y responder
 	contentType := "text/plain"
+	var bodyStr string
 	if s, ok := payload.(string); ok {
 		bodyStr = s
 	} else {

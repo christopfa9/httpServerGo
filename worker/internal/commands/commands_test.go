@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"httpServerGo/internal/commands"
+	"worker/internal/commands"
 )
 
 // --- Fibonacci ---

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"httpServerGo/internal/server"
+	"worker/internal/server"
 )
 
 // Inicializa los worker pools antes de correr tests

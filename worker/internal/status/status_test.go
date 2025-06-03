@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"httpServerGo/internal/status"
+	"worker/internal/status"
 )
 
 func TestMetrics_IncrementConnections(t *testing.T) {

@@ -1,0 +1,65 @@
+# docker-compose.yml
+
+version: "3.8"
+
+services:
+  # ——————————————————————————————
+  # Worker 1
+  # Construye la imagen desde ./worker/Dockerfile
+  # No publicamos puerto a host (solo uso interno)
+  # ——————————————————————————————
+  worker1:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: worker1
+    # EXPOSE 8080 está en el Dockerfile del worker, 
+    # así que queda disponible en la red interna de Docker Compose.
+    # No es necesario mapear puertos a la máquina host si solo
+    # el Dispatcher se conecta internamente.
+
+  # ——————————————————————————————
+  # Worker 2 (idéntico al Worker 1, pero con otro nombre de servicio)
+  # ——————————————————————————————
+  worker2:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: worker2
+
+  # ——————————————————————————————
+  # Worker 3 (otro más para tener 3 repeticiones)
+  # ——————————————————————————————
+  worker3:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: worker3
+
+  # ——————————————————————————————
+  # Dispatcher
+  # Construye la imagen desde ./dispatcher/Dockerfile
+  # Publica su puerto 9090 al host
+  # La variable WORKERS lista los tres servicios worker: “worker1:8080,worker2:8080,worker3:8080”
+  # ——————————————————————————————
+  dispatcher:
+    build:
+      context: ./dispatcher
+      dockerfile: Dockerfile
+    container_name: dispatcher
+    environment:
+      - WORKERS=worker1:8080,worker2:8080,worker3:8080
+    ports:
+      - "9090:9090"
+    depends_on:
+      - worker1
+      - worker2
+      - worker3
+
+# -------------------------------------------------
+# Por defecto, Docker Compose crea una red interna
+# llamada “httpservergo_default” (si tu proyecto se
+# llama “httpservergo” o similar). En esa red, los
+# servicios worker1, worker2, worker3, dispatcher
+# se resuelven por su nombre de servicio.
+# -------------------------------------------------
