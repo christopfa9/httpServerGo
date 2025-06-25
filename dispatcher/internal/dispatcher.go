@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -113,7 +115,6 @@ func pickNextWorker() string {
 func HandleConnection(clientConn net.Conn) {
 	defer clientConn.Close()
 
-	// 4.1) Read the first line: “GET /something?x=1 HTTP/1.0”
 	clientReader := bufio.NewReader(clientConn)
 	requestLine, err := clientReader.ReadString('\n')
 	if err != nil {
@@ -121,11 +122,16 @@ func HandleConnection(clientConn net.Conn) {
 	}
 	parts := strings.Split(strings.TrimSpace(requestLine), " ")
 	if len(parts) < 3 || parts[0] != "GET" {
-		// Only GET is allowed
 		fmt.Fprint(clientConn, "HTTP/1.0 405 Method Not Allowed\r\n\r\n")
 		return
 	}
 	uri := parts[1]
+
+	// Detectar si es /computepi
+	if strings.HasPrefix(uri, "/computepi") {
+		distributedComputePi(clientConn, uri, clientReader)
+		return
+	}
 
 	// 4.2) Collect the remaining headers (until empty line)
 	var headers []string
@@ -180,4 +186,99 @@ func HandleConnection(clientConn net.Conn) {
 			break
 		}
 	}
+}
+
+// distributedComputePi divide la tarea entre los workers y ensambla el resultado
+func distributedComputePi(clientConn net.Conn, uri string, clientReader *bufio.Reader) {
+	workersMtx.Lock()
+	activeWorkers := make([]string, len(workers))
+	copy(activeWorkers, workers)
+	workersMtx.Unlock()
+	if len(activeWorkers) == 0 {
+		fmt.Fprint(clientConn, "HTTP/1.0 503 Service Unavailable\r\n\r\n")
+		return
+	}
+
+	u, _ := url.Parse(uri)
+	params := u.Query()
+	itersStr := params.Get("iters")
+	iters, err := strconv.Atoi(itersStr)
+	if err != nil || iters <= 0 {
+		fmt.Fprint(clientConn, "HTTP/1.0 400 Bad Request\r\n\r\nInvalid iters parameter\n")
+		return
+	}
+
+	// Dividir iteraciones
+	perWorker := iters / len(activeWorkers)
+	extra := iters % len(activeWorkers)
+
+	type piResp struct {
+		Value float64 `json:"value"`
+		Err   string  `json:"err"`
+	}
+	results := make([]float64, len(activeWorkers))
+	errCh := make(chan error, len(activeWorkers))
+	respCh := make(chan struct{
+		idx int
+		val float64
+	}, len(activeWorkers))
+
+	for i, w := range activeWorkers {
+		wIters := perWorker
+		if i < extra {
+			wIters++
+		}
+		go func(idx int, workerAddr string, n int) {
+			// Construir sub-request
+			wuri := fmt.Sprintf("/computepi?iters=%d", n)
+			conn, err := net.DialTimeout("tcp", workerAddr, 2*time.Second)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			defer conn.Close()
+			fmt.Fprintf(conn, "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n", wuri, workerAddr)
+			reader := bufio.NewReader(conn)
+			// Leer status
+			line, err := reader.ReadString('\n')
+			if err != nil || !strings.Contains(line, "200") {
+				errCh <- fmt.Errorf("bad response from worker")
+				return
+			}
+			// Leer headers hasta línea vacía
+			for {
+				h, _ := reader.ReadString('\n')
+				if strings.TrimSpace(h) == "" {
+					break
+				}
+			}
+			// Leer body (asumimos float64 en texto plano)
+			body, _ := reader.ReadString('\n')
+			val, err := strconv.ParseFloat(strings.TrimSpace(body), 64)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			respCh <- struct{idx int; val float64}{idx, val}
+		}(i, w, wIters)
+	}
+
+	total := 0.0
+	done := 0
+	for done < len(activeWorkers) {
+		select {
+		case r := <-respCh:
+			results[r.idx] = r.val
+			done++
+		case <-time.After(3 * time.Second):
+			errCh <- fmt.Errorf("timeout waiting for worker")
+			done++
+		}
+	}
+	for _, v := range results {
+		total += v
+	}
+	// Promedio de los resultados parciales
+	final := total / float64(len(activeWorkers))
+	fmt.Fprintf(clientConn, "HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n\r\n%f\n", final)
 }

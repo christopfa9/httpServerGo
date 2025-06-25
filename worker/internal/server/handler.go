@@ -119,6 +119,10 @@ func HandleConnection(conn net.Conn) {
 		handler.HandleHelp(params, conn)
 		return
 
+	case "/matmul":
+		handler.HandleMatMul(conn)
+		return
+
 	default:
 		utils.WriteHTTPResponse(conn, 404, "text/plain", "404 Not Found\n")
 		return
