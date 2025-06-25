@@ -6,15 +6,15 @@ import (
 	"fmt"
 )
 
-// Hash calcula el SHA-256 del texto de entrada y devuelve su representación hexadecimal.
-// Retorna error solo si ocurre un fallo inesperado (muy poco probable).
+// Hash computes the SHA-256 hash of the input text and returns its hexadecimal representation.
+// Returns an error only if an unexpected failure occurs (very unlikely).
 func Hash(text string) (string, error) {
 	if text == "" {
-		return "", fmt.Errorf("el parámetro 'text' es obligatorio")
+		return "", fmt.Errorf("the 'text' parameter is required")
 	}
-	// 1) Obtener bytes del texto y calcular SHA-256
+	// 1) Convert the text to bytes and compute SHA-256
 	hashBytes := sha256.Sum256([]byte(text))
-	// 2) Codificar en hexadecimal
+	// 2) Encode to hexadecimal
 	hexHash := hex.EncodeToString(hashBytes[:])
 	return hexHash, nil
 }

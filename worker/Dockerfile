@@ -1,42 +1,42 @@
 #
-# Etapa 1: compilación del Worker
+# Stage 1: build the Worker
 #
 FROM golang:1.24-alpine AS builder
 
-# Instalamos git y certificados para que go mod pueda obtener dependencias si las hubiera
+# Install git and certificates so that go mod can fetch dependencies if needed
 RUN apk add --no-cache git ca-certificates
 
-# Fijamos como directorio de trabajo /app
+# Set /app as the working directory
 WORKDIR /app
 
-# 1) Copiamos únicamente go.mod y go.sum para cachear la capa de dependencias
+# 1) Copy only go.mod and go.sum to cache the dependency layer
 COPY go.mod go.sum ./
 RUN go mod download
 
-# 2) Copiamos todo el código fuente del Worker
+# 2) Copy all Worker source code
 COPY . .
 
-# 3) Compilamos el binario “worker”
+# 3) Compile the “worker” binary
 RUN CGO_ENABLED=0 \
     GOOS=linux \
     GOARCH=amd64 \
     go build -o worker ./cmd
 
 #
-# Etapa 2: imagen final ligera
+# Stage 2: final lightweight image
 #
 FROM alpine:3.17
 
-# Necesitamos certificados para HTTPS (si de pronto quisiéramos hacer healthcheck a HTTPS)
+# Certificates are needed for HTTPS (e.g., if we want to health check via HTTPS)
 RUN apk add --no-cache ca-certificates
 
 WORKDIR /root/
 
-# Copiamos el binario compilado desde la etapa builder
+# Copy the compiled binary from the builder stage
 COPY --from=builder /app/worker .
 
-# Exponemos el puerto 8080 (por convención, el Worker escucha en :8080)
+# Expose port 8080 (by convention, the Worker listens on :8080)
 EXPOSE 8080
 
-# Al arrancar el contenedor, ejecutamos el binario
+# When the container starts, run the binary
 ENTRYPOINT ["./worker"]

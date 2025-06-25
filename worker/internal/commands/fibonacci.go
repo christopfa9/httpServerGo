@@ -4,20 +4,20 @@ import (
 	"fmt"
 )
 
-// Fibonacci calcula el n-ésimo número de la serie de Fibonacci y
-// devuelve el resultado como string. Retorna error si n < 0.
+// Fibonacci computes the n-th number in the Fibonacci sequence and
+// returns the result as a string. Returns an error if n < 0.
 func Fibonacci(n int) (string, error) {
 	if n < 0 {
-		return "", fmt.Errorf("el parámetro 'num' debe ser >= 0, recibí %d", n)
+		return "", fmt.Errorf("the 'num' parameter must be >= 0, received %d", n)
 	}
-	resultado := fib(n)
-	// Optional: log.Printf("Fibonacci(%d) = %d", n, resultado)
-	return fmt.Sprintf("%d", resultado), nil
+	result := fib(n)
+	// Optional: log.Printf("Fibonacci(%d) = %d", n, result)
+	return fmt.Sprintf("%d", result), nil
 }
 
-// fib es la implementación recursiva pura de Fibonacci.
-// Para n muy grandes esto crecerá exponencialmente; si lo pruebas
-// con n > 40, quizá quieras memoización o un enfoque iterativo.
+// fib is the pure recursive implementation of Fibonacci.
+// For large n, this grows exponentially; for n > 40,
+// consider memoization or an iterative approach.
 func fib(n int) int {
 	if n <= 1 {
 		return n

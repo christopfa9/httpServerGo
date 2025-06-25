@@ -13,42 +13,42 @@ var (
 	shutdown    chan struct{}
 )
 
-// StartListener abre un socket TCP en el puerto indicado y acepta conexiones entrantes.
+// StartListener opens a TCP socket on the specified port and accepts incoming connections.
 func StartListener(port string) error {
 	addr := fmt.Sprintf(":%s", port)
 	var err error
 	listener, err = net.Listen("tcp", addr)
 	if err != nil {
-		return fmt.Errorf("no se pudo iniciar el listener en %s: %w", addr, err)
+		return fmt.Errorf("failed to start listener on %s: %w", addr, err)
 	}
 	defer listener.Close()
-	log.Printf("✔ Servidor escuchando en %s", addr)
+	log.Printf("Server listening on %s", addr)
 
 	shutdown = make(chan struct{})
 
 	for {
 		select {
 		case <-shutdown:
-			log.Println("🔌 Cerrando listener...")
+			log.Println("Closing listener...")
 			return nil
 		default:
 			conn, err := listener.Accept()
 			if err != nil {
-				// Ignorar error si el listener ya se cerró
+				// Ignore error if the listener has already been closed
 				if opErr, ok := err.(*net.OpError); ok && opErr.Err.Error() == "use of closed network connection" {
 					return nil
 				}
-				log.Printf("⚠ error al aceptar conexión: %v", err)
+				log.Printf("Error accepting connection: %v", err)
 				continue
 			}
-			log.Printf("→ Nueva conexión desde %s", conn.RemoteAddr())
+			log.Printf("New connection from %s", conn.RemoteAddr())
 
-			// Manejar la conexión en paralelo
+			// Handle the connection concurrently
 			go func(c net.Conn) {
 				defer func() {
 					c.Close()
 					connections.Delete(c.RemoteAddr())
-					log.Printf("🛑 Conexión cerrada: %s", c.RemoteAddr())
+					log.Printf("Connection closed: %s", c.RemoteAddr())
 				}()
 				HandleConnection(c)
 			}(conn)
@@ -56,7 +56,7 @@ func StartListener(port string) error {
 	}
 }
 
-// Shutdown detiene el listener y cierra todas las conexiones activas.
+// Shutdown stops the listener and closes all active connections.
 func Shutdown() {
 	if listener != nil {
 		close(shutdown)

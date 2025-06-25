@@ -4,8 +4,8 @@ import (
 	"strings"
 )
 
-// ToUpper convierte la cadena de texto recibida a mayúsculas y la devuelve.
-// No retorna error ya que cualquier texto (incluso vacío) es válido.
+// ToUpper converts the input text string to uppercase and returns it.
+// It does not return an error since any text (even empty) is valid.
 func ToUpper(text string) (string, error) {
 	return strings.ToUpper(text), nil
 }

@@ -10,12 +10,12 @@ import (
 	"worker/internal/server"
 )
 
-// Inicializa los worker pools antes de correr tests
+// Initializes worker pools before running tests
 func init() {
 	server.InitWorkerPools()
 }
 
-// helper para simular petición y leer respuesta completa sin bloqueo
+// Helper to simulate a request and read the full response without blocking
 func doRequest(t *testing.T, rawRequest string) string {
 	t.Helper()
 
@@ -23,18 +23,18 @@ func doRequest(t *testing.T, rawRequest string) string {
 	defer client.Close()
 	defer serverConn.Close()
 
-	// Ejecutar el handler en goroutine para no bloquear
+	// Run the handler in a goroutine to avoid blocking
 	go func() {
-		server.HandleConnection(serverConn) // No retorna valor, por eso no se asigna
+		server.HandleConnection(serverConn) // No return value
 	}()
 
-	// Escribir TODO el request (bloqueante)
+	// Write the full request (blocking)
 	_, err := client.Write([]byte(rawRequest))
 	if err != nil {
 		t.Fatalf("failed to write request: %v", err)
 	}
 
-	// Leer respuesta completa línea a línea hasta EOF o timeout
+	// Read the full response line by line until EOF or timeout
 	reader := bufio.NewReader(client)
 	var response strings.Builder
 
@@ -43,7 +43,7 @@ func doRequest(t *testing.T, rawRequest string) string {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-				break // timeout indica fin de lectura
+				break // timeout signals end of read
 			}
 			if err.Error() == "EOF" {
 				break
@@ -52,7 +52,7 @@ func doRequest(t *testing.T, rawRequest string) string {
 		}
 		response.WriteString(line)
 
-		// Opcional: cortar si detecta fin de headers HTTP (línea vacía)
+		// Optional: stop if end of HTTP headers is detected (empty line)
 		if line == "\r\n" {
 			break
 		}
@@ -89,7 +89,7 @@ func TestHandleConnection_CreateFile_Valid(t *testing.T) {
 }
 
 func TestHandleConnection_DeleteFile_Valid(t *testing.T) {
-	// Para evitar fallos, crear archivo antes de eliminar
+	// To avoid failure, create file before deleting it
 	reqCreate := "GET /createfile?name=testfile.txt&content=hello&repeat=1 HTTP/1.0\r\n\r\n"
 	doRequest(t, reqCreate)
 

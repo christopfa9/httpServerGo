@@ -11,18 +11,18 @@ import (
 	"worker/internal/handler"
 )
 
-// HandleConnection procesa una petición HTTP/1.0 simple, delega la ejecución
-// de cada comando a su pool de workers y responde usando los utilitarios de utils.
+// HandleConnection processes a simple HTTP/1.0 request, delegates the execution
+// of each command to its worker pool, and responds using utility functions from utils.
 func HandleConnection(conn net.Conn) {
 	status.IncTotalConnections()
 	status.IncActiveHandlers()
 	defer status.DecActiveHandlers()
 
-	// Timeout para no bloquearse indefinidamente
+	// Timeout to avoid blocking indefinitely
 	conn.SetDeadline(time.Now().Add(5 * time.Second))
 	reader := bufio.NewReader(conn)
 
-	// 1) Leer y validar línea de petición
+	// 1) Read and validate request line
 	line, err := reader.ReadString('\n')
 	if err != nil {
 		utils.WriteHTTPResponse(conn, 400, "text/plain", "400 Bad Request\n")
@@ -38,7 +38,7 @@ func HandleConnection(conn net.Conn) {
 		return
 	}
 
-	// 2) Extraer ruta y parámetros
+	// 2) Extract path and query parameters
 	rawURI := parts[1]
 	path, query := rawURI, ""
 	if idx := strings.Index(rawURI, "?"); idx != -1 {
@@ -47,7 +47,7 @@ func HandleConnection(conn net.Conn) {
 	}
 	params := utils.ParseQueryParams(query)
 
-	// 3) Dispatch según ruta, encolando en pools cuando corresponda
+	// 3) Dispatch based on route, enqueueing to worker pools when applicable
 	var (
 		payload interface{}
 		cmdErr  error
@@ -55,7 +55,7 @@ func HandleConnection(conn net.Conn) {
 
 	switch path {
 	case "/ping":
-		// Healthcheck: responder inmediatamente
+		// Healthcheck: respond immediately
 		utils.WriteHTTPResponse(conn, 200, "text/plain", "pong\n")
 		return
 
@@ -95,7 +95,6 @@ func HandleConnection(conn net.Conn) {
 		handler.HandleSimulate(params, conn)
 		return
 
-
 	case "/sleep":
 		handler.HandleSleep(params, conn)
 		return
@@ -125,13 +124,13 @@ func HandleConnection(conn net.Conn) {
 		return
 	}
 
-	// 4) Manejar errores de comando
+	// 4) Handle command errors
 	if cmdErr != nil {
 		utils.WriteHTTPResponse(conn, 500, "text/plain", "500 Internal Server Error\n")
 		return
 	}
 
-	// 5) Serializar payload y responder
+	// 5) Serialize payload and respond
 	contentType := "text/plain"
 	var bodyStr string
 	if s, ok := payload.(string); ok {

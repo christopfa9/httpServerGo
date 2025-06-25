@@ -1,25 +1,23 @@
-# docker-compose.yml
-
 version: "3.8"
 
 services:
   # ——————————————————————————————
   # Worker 1
-  # Construye la imagen desde ./worker/Dockerfile
-  # No publicamos puerto a host (solo uso interno)
+  # Builds the image from ./worker/Dockerfile
+  # Does not expose port to the host (used only internally)
   # ——————————————————————————————
   worker1:
     build:
       context: ./worker
       dockerfile: Dockerfile
     container_name: worker1
-    # EXPOSE 8080 está en el Dockerfile del worker, 
-    # así que queda disponible en la red interna de Docker Compose.
-    # No es necesario mapear puertos a la máquina host si solo
-    # el Dispatcher se conecta internamente.
+    # EXPOSE 8080 is defined in the worker's Dockerfile,
+    # so it is available on Docker Compose's internal network.
+    # No need to map ports to the host machine since only
+    # the Dispatcher connects internally.
 
   # ——————————————————————————————
-  # Worker 2 (idéntico al Worker 1, pero con otro nombre de servicio)
+  # Worker 2 (identical to Worker 1, but with a different service name)
   # ——————————————————————————————
   worker2:
     build:
@@ -28,7 +26,7 @@ services:
     container_name: worker2
 
   # ——————————————————————————————
-  # Worker 3 (otro más para tener 3 repeticiones)
+  # Worker 3 (another one to have 3 replicas)
   # ——————————————————————————————
   worker3:
     build:
@@ -38,9 +36,9 @@ services:
 
   # ——————————————————————————————
   # Dispatcher
-  # Construye la imagen desde ./dispatcher/Dockerfile
-  # Publica su puerto 9090 al host
-  # La variable WORKERS lista los tres servicios worker: “worker1:8080,worker2:8080,worker3:8080”
+  # Builds the image from ./dispatcher/Dockerfile
+  # Publishes its port 9090 to the host
+  # The WORKERS environment variable lists the three worker services: "worker1:8080,worker2:8080,worker3:8080"
   # ——————————————————————————————
   dispatcher:
     build:
@@ -55,11 +53,10 @@ services:
       - worker1
       - worker2
       - worker3
-
 # -------------------------------------------------
-# Por defecto, Docker Compose crea una red interna
-# llamada “httpservergo_default” (si tu proyecto se
-# llama “httpservergo” o similar). En esa red, los
-# servicios worker1, worker2, worker3, dispatcher
-# se resuelven por su nombre de servicio.
+# By default, Docker Compose creates an internal network
+# named "httpservergo_default" (if your project is named
+# "httpservergo" or similar). On that network, the services
+# worker1, worker2, worker3, and dispatcher are reachable
+# by their service names.
 # -------------------------------------------------

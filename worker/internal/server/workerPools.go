@@ -2,7 +2,7 @@ package server
 
 import "worker/internal/pool"
 
-// InitWorkerPools arranca todos los pools de trabajo con su configuración.
+// InitWorkerPools starts all the worker pools with their respective configurations.
 func InitWorkerPools() {
 	const (
 		fibWorkers       = 5

@@ -7,38 +7,38 @@ import (
 	"strings"
 )
 
-// CreateFile crea o trunca el archivo indicado y escribe el contenido dado
-// la cantidad de veces especificada. Retorna un mensaje de confirmación o error.
+// CreateFile creates or truncates the specified file and writes the given content
+// the specified number of times. Returns a confirmation message or an error.
 func CreateFile(name, content string, repeat int) (string, error) {
-	// 1) Validar y sanitizar filename
+	// 1) Validate and sanitize the filename
 	if name == "" {
-		return "", fmt.Errorf("el parámetro 'name' es obligatorio")
+		return "", fmt.Errorf("the 'name' parameter is required")
 	}
-	// Prevenir directory traversal: solo permitimos nombres sin separadores
+	// Prevent directory traversal: only allow names without path separators
 	if strings.ContainsAny(name, `/\`) || filepath.Base(name) != name {
-		return "", fmt.Errorf("nombre de archivo inválido: %q", name)
+		return "", fmt.Errorf("invalid filename: %q", name)
 	}
 
-	// 2) Ajustar repeat si es inválido
+	// 2) Adjust repeat if it's invalid
 	if repeat < 1 {
 		repeat = 1
 	}
 
-	// 3) Crear o truncar el archivo
+	// 3) Create or truncate the file
 	f, err := os.Create(name)
 	if err != nil {
-		return "", fmt.Errorf("error al crear o truncar el archivo %q: %w", name, err)
+		return "", fmt.Errorf("error creating or truncating file %q: %w", name, err)
 	}
 	defer f.Close()
 
-	// 4) Escribir el contenido 'repeat' veces
+	// 4) Write the content 'repeat' times
 	for i := 0; i < repeat; i++ {
 		if _, err := f.WriteString(content); err != nil {
-			return "", fmt.Errorf("error al escribir en el archivo %q: %w", name, err)
+			return "", fmt.Errorf("error writing to file %q: %w", name, err)
 		}
 	}
 
-	// 5) Confirmación
-	msg := fmt.Sprintf("Archivo %q creado/truncado con éxito (%d repeticiones)", name, repeat)
+	// 5) Confirmation
+	msg := fmt.Sprintf("File %q successfully created/truncated (%d repetitions)", name, repeat)
 	return msg, nil
 }

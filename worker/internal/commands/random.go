@@ -6,21 +6,21 @@ import (
 	"time"
 )
 
-// Random genera un slice de 'count' números enteros aleatorios en el rango [min, max].
-// Retorna un error si los parámetros son inválidos.
+// Random generates a slice of 'count' random integers in the range [min, max].
+// Returns an error if the parameters are invalid.
 func Random(count, min, max int) ([]int, error) {
-	// Validación de parámetros
+	// Parameter validation
 	if count <= 0 {
-		return nil, fmt.Errorf("el parámetro 'count' debe ser > 0, recibí %d", count)
+		return nil, fmt.Errorf("the 'count' parameter must be > 0, received %d", count)
 	}
 	if min > max {
-		return nil, fmt.Errorf("el parámetro 'max' (%d) debe ser >= 'min' (%d)", max, min)
+		return nil, fmt.Errorf("the 'max' parameter (%d) must be >= 'min' (%d)", max, min)
 	}
 
-	// Sembramos el generador; para un servidor real quizá quieras hacerlo una sola vez en init().
+	// Seed the random generator; for a real server you might want to do this once in init().
 	rand.Seed(time.Now().UnixNano())
 
-	// Generamos los números aleatorios
+	// Generate the random numbers
 	nums := make([]int, count)
 	for i := 0; i < count; i++ {
 		nums[i] = rand.Intn(max-min+1) + min

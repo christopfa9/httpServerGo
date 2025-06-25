@@ -7,31 +7,31 @@ import (
 	"strings"
 )
 
-// DeleteFile elimina el archivo indicado. Retorna un mensaje de confirmación o error.
+// DeleteFile deletes the specified file. Returns a confirmation message or an error.
 func DeleteFile(name string) (string, error) {
-	// 1) Validar y sanitizar filename
+	// 1) Validate and sanitize filename
 	if name == "" {
-		return "", fmt.Errorf("el parámetro 'name' es obligatorio")
+		return "", fmt.Errorf("the 'name' parameter is required")
 	}
-	// Prevenir directory traversal: no permitimos separadores ni rutas relativas
+	// Prevent directory traversal: do not allow path separators or relative paths
 	if strings.ContainsAny(name, `/\`) || filepath.Base(name) != name {
-		return "", fmt.Errorf("nombre de archivo inválido: %q", name)
+		return "", fmt.Errorf("invalid filename: %q", name)
 	}
 
-	// 2) Comprobar existencia
+	// 2) Check if file exists
 	if _, err := os.Stat(name); err != nil {
 		if os.IsNotExist(err) {
-			return "", fmt.Errorf("archivo no encontrado: %q", name)
+			return "", fmt.Errorf("file not found: %q", name)
 		}
-		return "", fmt.Errorf("error al acceder al archivo %q: %w", name, err)
+		return "", fmt.Errorf("error accessing file %q: %w", name, err)
 	}
 
-	// 3) Intentar eliminar
+	// 3) Attempt to delete
 	if err := os.Remove(name); err != nil {
-		return "", fmt.Errorf("error al eliminar el archivo %q: %w", name, err)
+		return "", fmt.Errorf("error deleting file %q: %w", name, err)
 	}
 
-	// 4) Confirmación
-	msg := fmt.Sprintf("Archivo %q eliminado con éxito", name)
+	// 4) Confirmation
+	msg := fmt.Sprintf("File %q successfully deleted", name)
 	return msg, nil
 }

@@ -4,22 +4,22 @@ import (
 	"strings"
 )
 
-// Help devuelve un listado legible de todos los endpoints disponibles.
+// Help returns a readable list of all available endpoints.
 func Help() (string, error) {
 	lines := []string{
-		"/fibonacci?num={N}                 : Calcula el N-ésimo número de Fibonacci",
-		"/createfile?name={name}&content={text}&repeat={times} : Crea o trunca un archivo con contenido repetido",
-		"/deletefile?name={name}           : Elimina un archivo existente",
-		"/reverse?text={text}              : Invierte la cadena de texto dada",
-		"/toupper?text={text}              : Convierte el texto a mayúsculas",
-		"/random?count={c}&min={min}&max={max} : Genera un arreglo de números aleatorios",
-		"/timestamp                        : Devuelve la hora actual en formato ISO-8601",
-		"/hash?text={text}                 : Calcula el hash SHA-256 del texto",
-		"/simulate?seconds={s}&task={name} : Simula una tarea durmiendo X segundos",
-		"/sleep?seconds={s}                : Suspende la ejecución durante X segundos",
-		"/loadtest?tasks={n}&sleep={s}     : Ejecuta N tareas concurrentes durmiendo S segundos cada una",
-		"/status                           : Muestra métricas del servidor (uptime, conexiones, procesos)",
-		"/help                             : Muestra este mensaje de ayuda",
+		"/fibonacci?num={N}                     : Calculates the N-th Fibonacci number",
+		"/createfile?name={name}&content={text}&repeat={times} : Creates or truncates a file with repeated content",
+		"/deletefile?name={name}               : Deletes an existing file",
+		"/reverse?text={text}                  : Reverses the given text string",
+		"/toupper?text={text}                  : Converts the text to uppercase",
+		"/random?count={c}&min={min}&max={max} : Generates an array of random numbers",
+		"/timestamp                            : Returns the current time in ISO-8601 format",
+		"/hash?text={text}                     : Computes the SHA-256 hash of the text",
+		"/simulate?seconds={s}&task={name}     : Simulates a task by sleeping for X seconds",
+		"/sleep?seconds={s}                    : Suspends execution for X seconds",
+		"/loadtest?tasks={n}&sleep={s}         : Runs N concurrent tasks sleeping S seconds each",
+		"/status                               : Shows server metrics (uptime, connections, processes)",
+		"/help                                 : Displays this help message",
 	}
 	return strings.Join(lines, "\r\n"), nil
 }

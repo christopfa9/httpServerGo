@@ -5,18 +5,18 @@ import (
 	"time"
 )
 
-// Simulate “ejecuta” una tarea durmiendo durante los segundos especificados.
-// El parámetro task es opcional y se incluye en el mensaje de confirmación.
+// Simulate "executes" a task by sleeping for the specified number of seconds.
+// The 'task' parameter is optional and included in the confirmation message.
 func Simulate(seconds int, task string) (string, error) {
 	if seconds < 0 {
-		return "", fmt.Errorf("el parámetro 'seconds' debe ser >= 0, recibí %d", seconds)
+		return "", fmt.Errorf("the 'seconds' parameter must be >= 0, received %d", seconds)
 	}
 
-	// Simulación: dormimos la cantidad de segundos indicada
+	// Simulation: sleep for the specified number of seconds
 	time.Sleep(time.Duration(seconds) * time.Second)
 
-	// Construimos el mensaje de confirmación
-	desc := "tarea"
+	// Build the confirmation message
+	desc := "task"
 	if task != "" {
 		desc = task
 	}

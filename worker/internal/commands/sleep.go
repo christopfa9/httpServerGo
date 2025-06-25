@@ -5,15 +5,15 @@ import (
 	"time"
 )
 
-// Sleep detiene la ejecución durante el número de segundos especificado.
-// Retorna un mensaje de confirmación o error si el parámetro es inválido.
+// Sleep pauses execution for the specified number of seconds.
+// Returns a confirmation message or an error if the parameter is invalid.
 func Sleep(seconds int) (string, error) {
 	if seconds < 0 {
-		return "", fmt.Errorf("el parámetro 'seconds' debe ser >= 0, recibí %d", seconds)
+		return "", fmt.Errorf("the 'seconds' parameter must be >= 0, received %d", seconds)
 	}
-	// Ejecutamos la pausa
+	// Perform the pause
 	time.Sleep(time.Duration(seconds) * time.Second)
-	// Preparamos mensaje de confirmación
+	// Prepare confirmation message
 	msg := fmt.Sprintf("Slept for %d seconds", seconds)
 	return msg, nil
 }

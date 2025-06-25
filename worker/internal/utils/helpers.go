@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// ParseQueryParams convierte una cadena "a=1&b=foo" en un map[string]string.
+// ParseQueryParams converts a string like "a=1&b=foo" into a map[string]string.
 func ParseQueryParams(rawQuery string) map[string]string {
 	params := make(map[string]string)
 	if rawQuery == "" {
@@ -26,7 +26,7 @@ func ParseQueryParams(rawQuery string) map[string]string {
 	return params
 }
 
-// WriteHTTPResponse genera y envía una respuesta HTTP/1.0 básica.
+// WriteHTTPResponse generates and sends a basic HTTP/1.0 response.
 func WriteHTTPResponse(conn net.Conn, statusCode int, contentType, body string) error {
 	statusText := map[int]string{
 		200: "OK",
@@ -52,19 +52,19 @@ func WriteHTTPResponse(conn net.Conn, statusCode int, contentType, body string) 
 	return nil
 }
 
-// SanitizeFileName devuelve solo el nombre base del archivo, eliminando cualquier ruta.
+// SanitizeFileName returns only the base name of the file, removing any path prefix.
 func SanitizeFileName(name string) string {
-	// filepath.Base descarta cualquier prefijo de directorio
+	// filepath.Base discards any directory prefix
 	base := filepath.Base(name)
-	// opcional: eliminar caracteres sospechosos
+	// optionally: remove suspicious characters
 	return strings.ReplaceAll(base, string(filepath.Separator), "")
 }
 
-// JSONResponse serializa data (struct, map, slice, etc.) a JSON indentado.
-// Si data es ya un []byte (p.ej. el JSON crudo de status.Marshal), lo devuelve sin tocar.
+// JSONResponse serializes data (struct, map, slice, etc.) to indented JSON.
+// If data is already a []byte (e.g. raw JSON from status.Marshal), it returns it as is.
 func JSONResponse(data any) (string, error) {
 	if raw, ok := data.([]byte); ok {
-		// ya está listo para enviar
+		// already ready to send
 		return string(raw), nil
 	}
 	b, err := json.MarshalIndent(data, "", "  ")
@@ -74,7 +74,7 @@ func JSONResponse(data any) (string, error) {
 	return string(b), nil
 }
 
-// SHA256Hash calcula el hash SHA-256 de input y lo devuelve en hex.
+// SHA256Hash computes the SHA-256 hash of the input and returns it in hex format.
 func SHA256Hash(input string) string {
 	sum := sha256.Sum256([]byte(input))
 	return hex.EncodeToString(sum[:])
