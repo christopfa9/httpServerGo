@@ -3,12 +3,12 @@ package server
 import (
 	"bufio"
 	"net"
-	"strconv"
 	"strings"
 	"time"
 
 	"worker/internal/status"
 	"worker/internal/utils"
+	"worker/internal/handler"
 )
 
 // HandleConnection procesa una petición HTTP/1.0 simple, delega la ejecución
@@ -60,138 +60,65 @@ func HandleConnection(conn net.Conn) {
 		return
 
 	case "/fibonacci":
-		n, err := strconv.Atoi(params["num"])
-		if err != nil {
-			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid 'num' parameter\n")
-			return
-		}
-		respCh := make(chan fibResult)
-		fibJobs <- fibJob{n: n, resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandleFibonacci(params, conn)
+		return
 
 	case "/createfile":
-		name := params["name"]
-		content := params["content"]
-		repeat, _ := strconv.Atoi(params["repeat"])
-		respCh := make(chan createFileResult)
-		createFileJobs <- createFileJob{name: name, content: content, repeat: repeat, resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandleCreateFile(params, conn)
+		return
 
 	case "/deletefile":
-		name := params["name"]
-		respCh := make(chan deleteFileResult)
-		deleteFileJobs <- deleteFileJob{name: name, resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandleDeleteFile(params, conn)
+		return
 
 	case "/reverse":
-		text := params["text"]
-		respCh := make(chan reverseResult)
-		reverseJobs <- reverseJob{text: text, resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandleReverse(params, conn)
+		return
 
 	case "/toupper":
-		text := params["text"]
-		respCh := make(chan toUpperResult)
-		toUpperJobs <- toUpperJob{text: text, resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandleToUpper(params, conn)
+		return
 
 	case "/random":
-		cnt, e1 := strconv.Atoi(params["count"])
-		mn, e2 := strconv.Atoi(params["min"])
-		mx, e3 := strconv.Atoi(params["max"])
-		if e1 != nil || e2 != nil || e3 != nil {
-			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid count/min/max parameters\n")
-			return
-		}
-		respCh := make(chan randomResult)
-		randomJobs <- randomJob{count: cnt, min: mn, max: mx, resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandleRandom(params, conn)
+		return
 
 	case "/timestamp":
-		respCh := make(chan timestampResult)
-		timestampJobs <- timestampJob{resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandleTimestamp(params, conn)
+		return
 
 	case "/hash":
-		text := params["text"]
-		respCh := make(chan hashResult)
-		hashJobs <- hashJob{text: text, resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandleHash(params, conn)
+		return
 
 	case "/simulate":
-		secs, e := strconv.Atoi(params["seconds"])
-		if e != nil {
-			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid 'seconds' parameter\n")
-			return
-		}
-		task := params["task"]
-		respCh := make(chan simulateResult)
-		simulateJobs <- simulateJob{seconds: secs, task: task, resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandleSimulate(params, conn)
+		return
+
 
 	case "/sleep":
-		secs, e := strconv.Atoi(params["seconds"])
-		if e != nil {
-			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid 'seconds' parameter\n")
-			return
-		}
-		respCh := make(chan sleepResult)
-		sleepJobs <- sleepJob{seconds: secs, resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandleSleep(params, conn)
+		return
 
 	case "/loadtest":
-		tasks, e1 := strconv.Atoi(params["tasks"])
-		sleepSec, e2 := strconv.Atoi(params["sleep"])
-		if e1 != nil || e2 != nil {
-			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid tasks/sleep parameters\n")
-			return
-		}
-		respCh := make(chan loadTestResult)
-		loadTestJobs <- loadTestJob{tasks: tasks, sleepSec: sleepSec, resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandleLoadTest(params, conn)
+		return	
 
 	case "/computepi":
-		iters, err := strconv.Atoi(params["iters"])
-		if err != nil {
-			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid 'iters' parameter\n")
-			return
-		}
-		respCh := make(chan computePiResult)
-		computePiJobs <- computePiJob{iters: iters, resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandleComputePi(params, conn)
+		return
 
 	case "/pow":
-		prefix := params["prefix"]
-		maxTrials, err := strconv.Atoi(params["maxTrials"])
-		if err != nil {
-			utils.WriteHTTPResponse(conn, 400, "text/plain", "Invalid 'maxTrials' parameter\n")
-			return
-		}
-		respCh := make(chan powResult)
-		powJobs <- powJob{prefix: prefix, maxTrials: maxTrials, resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandlePow(params, conn)
+		return
 
 	case "/status":
-		payload, cmdErr = status.Marshal()
+		handler.HandleStatus(params, conn)
+		return
 
 	case "/help":
-		respCh := make(chan helpResult)
-		helpJobs <- helpJob{resp: respCh}
-		res := <-respCh
-		payload, cmdErr = res.value, res.err
+		handler.HandleHelp(params, conn)
+		return
 
 	default:
 		utils.WriteHTTPResponse(conn, 404, "text/plain", "404 Not Found\n")
