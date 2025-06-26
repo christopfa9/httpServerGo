@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/url"
@@ -130,6 +131,18 @@ func HandleConnection(clientConn net.Conn) {
 	// Detectar si es /computepi
 	if strings.HasPrefix(uri, "/computepi") {
 		distributedComputePi(clientConn, uri, clientReader)
+		return
+	}
+
+	// Endpoint especial para /workers: agrega antes del default
+	if uri == "/workers" {
+		reports, err := GetWorkersStatus()
+		if err != nil {
+			fmt.Fprintf(clientConn, "HTTP/1.0 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nError: %v\n", err)
+			return
+		}
+		jsonData, _ := json.MarshalIndent(reports, "", "  ")
+		fmt.Fprintf(clientConn, "HTTP/1.0 200 OK\r\nContent-Type: application/json\r\n\r\n%s", string(jsonData))
 		return
 	}
 
@@ -282,3 +295,5 @@ func distributedComputePi(clientConn net.Conn, uri string, clientReader *bufio.R
 	final := total / float64(len(activeWorkers))
 	fmt.Fprintf(clientConn, "HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n\r\n%f\n", final)
 }
+
+// Elimina la función GetWorkersStatus que solo hace ping a los workers, para evitar conflicto y usar la versión correcta que consulta /workers en los workers.

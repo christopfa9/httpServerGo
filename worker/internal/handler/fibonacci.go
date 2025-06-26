@@ -4,6 +4,7 @@ import (
 	"net"
 	"strconv"
 	"worker/internal/pool"
+	"worker/internal/status"
 	"worker/internal/utils"
 )
 
@@ -24,5 +25,7 @@ func HandleFibonacci(params map[string]string, conn net.Conn) {
 		utils.WriteHTTPResponse(conn, 500, "text/plain", "500 Internal Server Error\n")
 		return
 	}
+	// Incrementa el contador de tareas completadas
+	status.IncCompletedTasks()
 	utils.WriteHTTPResponse(conn, 200, "text/plain", res.Value)
 }

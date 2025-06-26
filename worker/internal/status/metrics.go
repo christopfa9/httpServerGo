@@ -5,6 +5,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"worker/internal/pool"
 )
 
 // ProcessInfo stores information about a child process.
@@ -96,6 +98,23 @@ func Marshal() ([]byte, error) {
 	// Get the server hostname
 	host, _ := os.Hostname()
 
+	// Calcula la carga (suma de la longitud de todas las colas de trabajo)
+	queueLength := 0
+	queueLength += len(pool.FibJobs)
+	queueLength += len(pool.CreateFileJobs)
+	queueLength += len(pool.DeleteFileJobs)
+	queueLength += len(pool.ReverseJobs)
+	queueLength += len(pool.ToUpperJobs)
+	queueLength += len(pool.RandomJobs)
+	queueLength += len(pool.TimestampJobs)
+	queueLength += len(pool.HashJobs)
+	queueLength += len(pool.SimulateJobs)
+	queueLength += len(pool.SleepJobs)
+	queueLength += len(pool.LoadTestJobs)
+	queueLength += len(pool.ComputePiJobs)
+	queueLength += len(pool.PowJobs)
+	queueLength += len(pool.HelpJobs)
+
 	// Payload in the format we want to expose
 	payload := struct {
 		Hostname         string        `json:"hostname"`
@@ -103,13 +122,34 @@ func Marshal() ([]byte, error) {
 		TotalConnections int           `json:"total_connections"`
 		ActiveHandlers   int           `json:"active_handlers"`
 		Processes        []ProcessInfo `json:"processes"`
+		CompletedTasks   int           `json:"completed_tasks"`
+		QueueLength      int           `json:"queue_length"`
 	}{
 		Hostname:         host,
 		StartTime:        metrics.StartTime,
 		TotalConnections: metrics.TotalConnections,
 		ActiveHandlers:   metrics.ActiveHandlers,
 		Processes:        procs,
+		CompletedTasks:   completedTasks,
+		QueueLength:      queueLength,
 	}
 
 	return json.MarshalIndent(payload, "", "  ")
+}
+
+// completedTasks cuenta el total de tareas completadas por el worker.
+var completedTasks int
+
+// IncCompletedTasks incrementa el contador de tareas completadas.
+func IncCompletedTasks() {
+	metrics.mutex.Lock()
+	defer metrics.mutex.Unlock()
+	completedTasks++
+}
+
+// GetCompletedTasks devuelve el total de tareas completadas.
+func GetCompletedTasks() int {
+	metrics.mutex.Lock()
+	defer metrics.mutex.Unlock()
+	return completedTasks
 }

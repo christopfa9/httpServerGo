@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"worker/internal/pool"
 	"worker/internal/utils"
+	"worker/internal/status"
 )
 
 func HandleCreateFile(params map[string]string, conn net.Conn) {
@@ -24,6 +25,7 @@ func HandleCreateFile(params map[string]string, conn net.Conn) {
 		utils.WriteHTTPResponse(conn, 500, "text/plain", "500 Internal Server Error\n")
 		return
 	}
+	status.IncCompletedTasks()
 	utils.WriteHTTPResponse(conn, 200, "text/plain", res.Value)
 }
 

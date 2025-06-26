@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"worker/internal/pool"
+	"worker/internal/status"
 )
 
 func HandleComputePi(params map[string]string, conn net.Conn) {
@@ -26,6 +27,8 @@ func HandleComputePi(params map[string]string, conn net.Conn) {
 		fmt.Fprintf(conn, "HTTP/1.0 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\n500 Internal Server Error\n")
 		return
 	}
+	// Incrementa el contador de tareas completadas
+	status.IncCompletedTasks()
 	// Responder solo el valor de pi en texto plano
 	fmt.Fprintf(conn, "HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n\r\n%s\n", res.Value)
 }
