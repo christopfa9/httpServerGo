@@ -134,6 +134,12 @@ func HandleConnection(clientConn net.Conn) {
 		return
 	}
 
+	// Detectar si es /pow
+	if strings.HasPrefix(uri, "/pow") {
+		distributedPow(clientConn, uri, clientReader)
+		return
+	}
+
 	// Endpoint especial para /workers: agrega antes del default
 	if uri == "/workers" {
 		reports, err := GetWorkersStatus()
@@ -296,4 +302,80 @@ func distributedComputePi(clientConn net.Conn, uri string, clientReader *bufio.R
 	fmt.Fprintf(clientConn, "HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n\r\n%f\n", final)
 }
 
-// Elimina la función GetWorkersStatus que solo hace ping a los workers, para evitar conflicto y usar la versión correcta que consulta /workers en los workers.
+// distributedPow divide la búsqueda de hash con prefijo entre los workers y responde con el primer resultado válido.
+func distributedPow(clientConn net.Conn, uri string, clientReader *bufio.Reader) {
+	workersMtx.Lock()
+	activeWorkers := make([]string, len(workers))
+	copy(activeWorkers, workers)
+	workersMtx.Unlock()
+	if len(activeWorkers) == 0 {
+		fmt.Fprint(clientConn, "HTTP/1.0 503 Service Unavailable\r\n\r\n")
+		return
+	}
+
+	u, _ := url.Parse(uri)
+	params := u.Query()
+	prefix := params.Get("prefix")
+	maxTrialsStr := params.Get("maxTrials")
+	maxTrials, err := strconv.Atoi(maxTrialsStr)
+	if err != nil || maxTrials <= 0 {
+		fmt.Fprint(clientConn, "HTTP/1.0 400 Bad Request\r\n\r\nInvalid maxTrials parameter\n")
+		return
+	}
+
+	perWorker := maxTrials / len(activeWorkers)
+	extra := maxTrials % len(activeWorkers)
+
+	type powResp struct {
+		idx  int
+		val  string
+		err  error
+	}
+	respCh := make(chan powResp, len(activeWorkers))
+
+	for i, w := range activeWorkers {
+		wTrials := perWorker
+		if i < extra {
+			wTrials++
+		}
+		go func(idx int, workerAddr string, trials int) {
+			wuri := fmt.Sprintf("/pow?prefix=%s&maxTrials=%d", prefix, trials)
+			conn, err := net.DialTimeout("tcp", workerAddr, 2*time.Second)
+			if err != nil {
+				respCh <- powResp{idx, "", err}
+				return
+			}
+			defer conn.Close()
+			fmt.Fprintf(conn, "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n", wuri, workerAddr)
+			reader := bufio.NewReader(conn)
+			line, err := reader.ReadString('\n')
+			if err != nil || !strings.Contains(line, "200") {
+				respCh <- powResp{idx, "", fmt.Errorf("bad response from worker")}
+				return
+			}
+			for {
+				h, _ := reader.ReadString('\n')
+				if strings.TrimSpace(h) == "" {
+					break
+				}
+			}
+			body, _ := reader.ReadString('\n')
+			respCh <- powResp{idx, strings.TrimSpace(body), nil}
+		}(i, w, wTrials)
+	}
+
+	var result string
+	gotResult := false
+	for i := 0; i < len(activeWorkers); i++ {
+		resp := <-respCh
+		if resp.err == nil && !gotResult {
+			result = resp.val
+			gotResult = true
+		}
+	}
+	if gotResult {
+		fmt.Fprintf(clientConn, "HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n\r\n%s\n", result)
+	} else {
+		fmt.Fprint(clientConn, "HTTP/1.0 404 Not Found\r\n\r\nNo valid hash found\n")
+	}
+}
